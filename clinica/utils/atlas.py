@@ -14,7 +14,7 @@ Either a refactoring of this module or the use of an external API
 import abc
 
 T1_VOLUME_ATLASES = [
-    "AAL2",
+    "AAL3" "AAL2",
     "AICHA",
     "Hammers",
     "LPBA40",
@@ -22,7 +22,7 @@ T1_VOLUME_ATLASES = [
 ]
 
 PET_VOLUME_ATLASES = [
-    "AAL2",
+    "AAL3" "AAL2",
     "AICHA",
     "Hammers",
     "LPBA40",
@@ -443,6 +443,39 @@ class Neuromorphometrics(AtlasAbstract):
             "resources",
             "atlases",
             "atlas-Neuromorphometrics_dseg.tsv",
+        )
+
+
+class AAL3(AtlasAbstract):
+    def __init__(self):
+        AtlasAbstract.__init__(self)
+
+    @staticmethod
+    def get_name_atlas():
+        return "AAL3"
+
+    @staticmethod
+    def get_atlas_labels():
+        from os.path import join, realpath, split
+
+        return join(
+            split(realpath(__file__))[0],
+            "..",
+            "resources",
+            "atlases",
+            "atlas-AAL3_dseg.nii.gz",
+        )
+
+    @staticmethod
+    def get_tsv_roi():
+        from os.path import join, realpath, split
+
+        return join(
+            split(realpath(__file__))[0],
+            "..",
+            "resources",
+            "atlases",
+            "atlas-AAL3_dseg.tsv",
         )
 
 
