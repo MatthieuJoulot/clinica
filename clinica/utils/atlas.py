@@ -14,7 +14,8 @@ Either a refactoring of this module or the use of an external API
 import abc
 
 T1_VOLUME_ATLASES = [
-    "AAL3" "AAL2",
+    "AAL3",
+    "AAL2",
     "AICHA",
     "Hammers",
     "LPBA40",
@@ -22,7 +23,8 @@ T1_VOLUME_ATLASES = [
 ]
 
 PET_VOLUME_ATLASES = [
-    "AAL3" "AAL2",
+    "AAL3",
+    "AAL2",
     "AICHA",
     "Hammers",
     "LPBA40",
