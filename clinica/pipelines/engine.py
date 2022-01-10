@@ -266,6 +266,9 @@ class Pipeline(Workflow):
             plugin = "MultiProc"
         exec_graph = []
         try:
+            Workflow.write_graph(
+                self, graph2use="flat", dotfilename="./graph.dot", format="png"
+            )
             exec_graph = Workflow.run(self, plugin, plugin_args, update_hash)
             if not self.base_dir_was_specified:
                 shutil.rmtree(self.base_dir)
