@@ -296,6 +296,9 @@ class DwiDti(cpe.Pipeline):
         apply_ants_registration_for_rd = apply_ants_registration.clone(
             "3b-Apply_ANTs_Registration_RD"
         )
+        # apply_ants_registration_for_decfa = apply_ants_registration.clone(
+        #     "3b-Apply_ANTs_Registration_DECFA"
+        # )
 
         thres_map = npe.Node(
             fsl.Threshold(thresh=0.0), iterfield=["in_file"], name="RemoveNegative"
@@ -329,7 +332,7 @@ class DwiDti(cpe.Pipeline):
         thres_md = thres_map.clone("5-Remove_Negative_MD")
         thres_ad = thres_map.clone("5-Remove_Negative_AD")
         thres_rd = thres_map.clone("5-Remove_Negative_RD")
-        thres_decfa = thres_map.clone("5-Remove_Negative_DECFA")
+        # thres_decfa = thres_map.clone("5-Remove_Negative_DECFA")
 
         print_begin_message = npe.Node(
             interface=nutil.Function(
@@ -361,8 +364,10 @@ class DwiDti(cpe.Pipeline):
                                                       ("preproc_bvec", "bvec_file")]),
                 # Computation of the DTI model
                 (self.input_node, dwi_to_dti, [("b0_mask", "mask"),
-                                               ("preproc_dwi", "in_file")]),
-                (convert_gradients, dwi_to_dti, [("encoding_file", "encoding_file")]),
+                                               ("preproc_dwi", "in_file"),
+                                               ("preproc_bval",  "bval_file")
+                                               ("preproc_bvec", "bvec_file")]),
+                #(convert_gradients, dwi_to_dti, [("encoding_file", "encoding_file")]),
                 (get_caps_filenames, dwi_to_dti, [("out_dti", "out_filename")]),
                 # Computation of the different metrics from the DTI
                 (get_caps_filenames, dti_to_metrics, [("out_fa", "out_fa")]),
@@ -413,15 +418,15 @@ class DwiDti(cpe.Pipeline):
                 (get_caps_filenames, thres_rd, [("out_rd", "out_file")]),
                 (dti_to_metrics, thres_rd, [("out_rd", "in_file")]),
 
-                (get_caps_filenames, thres_decfa, [("out_evec", "out_file")]),
-                (dti_to_metrics, thres_decfa, [("out_evec", "in_file")]),
+                #(get_caps_filenames, thres_decfa, [("out_evec", "out_file")]),
+                (dti_to_metrics, self.output_node, [("out_evec", "decfa")]),
                 # Outputnode
                 (dwi_to_dti, self.output_node, [("tensor", "dti")]),
                 (thres_fa, self.output_node, [("out_file", "fa")]),
                 (thres_md, self.output_node, [("out_file", "md")]),
                 (thres_ad, self.output_node, [("out_file", "ad")]),
                 (thres_rd, self.output_node, [("out_file", "rd")]),
-                (thres_decfa, self.output_node, [("out_file", "decfa")]),
+                #(thres_decfa, self.output_node, [("out_file", "decfa")]),
 
                 (register_fa, self.output_node, [("out_matrix", "affine_matrix")]),
                 (register_fa, self.output_node, [("forward_warp_field", "b_spline_transform")]),
