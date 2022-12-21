@@ -16,7 +16,7 @@ class T1VolumeDartel2MNI(cpe.Pipeline):
             raise KeyError("Missing compulsory group_label key in pipeline parameter.")
 
         self.parameters.setdefault("tissues", [1, 2, 3])
-        self.parameters.setdefault("voxel_size", None)
+        self.parameters.setdefault("voxel_size", [2, 2, 2])
         self.parameters.setdefault("modulate", True)
         self.parameters.setdefault("smooth", [8])
 
