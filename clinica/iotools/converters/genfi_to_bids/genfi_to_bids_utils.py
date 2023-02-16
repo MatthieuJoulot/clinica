@@ -457,6 +457,10 @@ def get_parent(path: str, n: int = 1) -> Path:
     return get_parent(Path(path).parent, n - 1)
 
 
+def another_function():
+    return
+
+
 def merge_imaging_data(df_dicom: DataFrame) -> DataFrame:
     """This function uses the raw information extracted from the images,
     to obtain all the information necessary for the BIDS conversion.
@@ -471,16 +475,25 @@ def merge_imaging_data(df_dicom: DataFrame) -> DataFrame:
     df_sub_ses_run: DataFrame
         Dataframe with the data necessary for the BIDS
     """
-
+    print(df_dicom.source)
     df_dicom = df_dicom.assign(
         source_id=lambda df: df.source.apply(
-            lambda x: get_parent(x, 2).name.split("-")[0]
+            lambda x: get_parent(x, 6).name.split("-")[0]
         ),
         source_ses_id=lambda df: df.source.apply(
-            lambda x: get_parent(x, 2).name.split("-")[1]
+            lambda x: get_parent(x, 6).name.split("-")[1]
         ),
-        origin=lambda df: df.source.apply(lambda x: get_parent(x, 4)),
+        origin=lambda df: df.source.apply(lambda x: get_parent(x, 8)),
     )
+    # df_dicom = df_dicom.assign(
+    #     source_id=lambda df: df.source.apply(
+    #         lambda x: another_function(x)
+    #     ),
+    #     source_ses_id=lambda df: df.source.apply(
+    #         lambda x: another_function(x)
+    #     ),
+    #     origin=lambda df: df.source.apply(lambda x: another_function(x)),
+    # )
 
     df_dicom = df_dicom.reset_index()
 
@@ -503,13 +516,17 @@ def merge_imaging_data(df_dicom: DataFrame) -> DataFrame:
     df_sub_ses = compute_modality(df_sub_ses)
 
     df_fmap = df_sub_ses.assign(
-        dir_num=lambda x: x.source.apply(lambda y: int(get_parent(y).name))
+        dir_num=lambda x: x.source.apply(
+            lambda y: int(get_parent(y, 3).name.split("-")[0])
+        )
     )
 
     df_suf = merge_fieldmaps(df_fmap, identify_fieldmaps(df_fmap))
 
     df_suf_dir = df_suf.assign(
-        dir_num=lambda x: x.source.apply(lambda y: int(get_parent(y).name))
+        dir_num=lambda x: x.source.apply(
+            lambda y: int(get_parent(y, 3).name.split("-")[0])
+        )
     )
     df_alt = compute_runs(df_suf_dir)
     df_sub_ses_run = df_suf_dir.merge(
