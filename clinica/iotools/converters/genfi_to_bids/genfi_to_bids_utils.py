@@ -65,11 +65,17 @@ def filter_dicoms(df: DataFrame) -> DataFrame:
     df = df.assign(
         acq_date=lambda df: df.source_path.apply(lambda x: pdcm.dcmread(x).StudyDate)
     )
+    df = df.assign(
+        manufacturer=lambda df: df.source_path.apply(
+            lambda x: pdcm.dcmread(x).Manufacturer
+        )
+    )
     df = df.set_index(["source_path"], verify_integrity=True)
 
     df = df[~df["source"].str.contains("secondary", case=False)]
     for file_mod in to_filter:
         df = df[~df["series_desc"].str.contains(file_mod, case=False)]
+    print("df_dicom:", df)
     return df
 
 
@@ -376,8 +382,6 @@ def identify_fieldmaps(df: DataFrame) -> DataFrame:
         Dataframe with the fieldmaps identified
     """
     filter = ["source_id", "source_ses_id", "modality", "dir_num", "suffix"]
-    # print("df: ", df[filter])
-    # print("df_more: ", df[filter][df["modality"].str.contains("fieldmap")])
     df1 = df[filter][df["modality"].str.contains("fieldmap")].groupby(filter[:-1]).min()
     df2 = (
         df[filter[:-1]][df["modality"].str.contains("fieldmap")]
@@ -430,12 +434,22 @@ def compute_runs(df: DataFrame) -> DataFrame:
     DataFrame
         Dataframe containing the correct run for each acquisition.
     """
-    filter = ["source_id", "source_ses_id", "suffix", "dir_num"]
+    filter = ["source_id", "source_ses_id", "suffix", "manufacturer", "dir_num"]
     df1 = df[filter].groupby(filter).min()
     df2 = df[filter].groupby(filter[:-1]).min()
     df1 = df1.join(df2.rename(columns={"dir_num": "run_01_dir_num"}))
     df_alt = df1.reset_index().assign(run=lambda x: (x.run_01_dir_num != x.dir_num))
-    return df_alt.assign(run_num=lambda df: df.run.apply(lambda x: f"run-0{int(x)+1}"))
+    df_alt = df_alt.assign(
+        run_num=lambda df: df.run.apply(lambda x: f"run-0{int(x)+1}")
+    )
+    df_duplicates = df_alt[
+        df_alt.duplicated(
+            subset=["source_id", "source_ses_id", "suffix", "run_num", "suffix"],
+            keep=False,
+        )
+    ]
+    df_duplicates.to_csv("duplicates.tsv", sep="\t")
+    return df_alt
 
 
 def get_parent(path: str, n: int = 1) -> Path:
@@ -547,9 +561,7 @@ def merge_imaging_data(df_dicom: DataFrame) -> DataFrame:
         bids_full_path=lambda df: df[
             ["participant_id", "session_id", "datatype", "bids_filename"]
         ].agg("/".join, axis=1),
-    ).drop_duplicates(
-        subset=["participant_id", "session_id", "modality", "bids_filename"]
-    )
+    )  # .drop_duplicates(subset=["participant_id", "session_id", "modality", "bids_filename"])
     # print(df_alt[df_alt.duplicated(subset=["source_id", "source_ses_id", "suffix", "run_num", "suffix"], keep=False)])
     # print(df_sub_ses_run[df_sub_ses_run.duplicated(subset=["participant_id", "session_id", "modality", "run_num", "suffix"], keep= False)])
     # print(to_return[to_return.duplicated(subset=["participant_id", "session_id", "modality", "bids_filename"], keep=False)])
