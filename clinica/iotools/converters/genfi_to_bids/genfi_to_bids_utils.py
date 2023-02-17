@@ -352,8 +352,12 @@ def compute_modality(df: DataFrame) -> DataFrame:
             "task": "",
         },
     }
-    df = df.assign(
-        modality=lambda x: x.series_desc.apply(lambda y: identify_modality(y))
+    df = (
+        df.assign(
+            modality=lambda x: x.series_desc.apply(lambda y: identify_modality(y))
+        )
+        .dropna(subset=["modality"])
+        .drop_duplicates()
     )
     return df.join(df.modality.map(modality_mapping).apply(pd.Series))
 
@@ -372,6 +376,8 @@ def identify_fieldmaps(df: DataFrame) -> DataFrame:
         Dataframe with the fieldmaps identified
     """
     filter = ["source_id", "source_ses_id", "modality", "dir_num", "suffix"]
+    # print("df: ", df[filter])
+    # print("df_more: ", df[filter][df["modality"].str.contains("fieldmap")])
     df1 = df[filter][df["modality"].str.contains("fieldmap")].groupby(filter[:-1]).min()
     df2 = (
         df[filter[:-1]][df["modality"].str.contains("fieldmap")]
@@ -475,7 +481,7 @@ def merge_imaging_data(df_dicom: DataFrame) -> DataFrame:
     df_sub_ses_run: DataFrame
         Dataframe with the data necessary for the BIDS
     """
-    print(df_dicom.source)
+    # print(df_dicom.source)
     df_dicom = df_dicom.assign(
         source_id=lambda df: df.source.apply(
             lambda x: get_parent(x, 6).name.split("-")[0]
@@ -534,15 +540,20 @@ def merge_imaging_data(df_dicom: DataFrame) -> DataFrame:
         how="left",
         on=["source_id", "source_ses_id", "suffix", "dir_num"],
     )
-
-    return df_sub_ses_run.assign(
+    to_return = df_sub_ses_run.assign(
         bids_filename=lambda df: df[
             ["participant_id", "session_id", "run_num", "suffix"]
         ].agg("_".join, axis=1),
         bids_full_path=lambda df: df[
             ["participant_id", "session_id", "datatype", "bids_filename"]
         ].agg("/".join, axis=1),
+    ).drop_duplicates(
+        subset=["participant_id", "session_id", "modality", "bids_filename"]
     )
+    # print(df_alt[df_alt.duplicated(subset=["source_id", "source_ses_id", "suffix", "run_num", "suffix"], keep=False)])
+    # print(df_sub_ses_run[df_sub_ses_run.duplicated(subset=["participant_id", "session_id", "modality", "run_num", "suffix"], keep= False)])
+    # print(to_return[to_return.duplicated(subset=["participant_id", "session_id", "modality", "bids_filename"], keep=False)])
+    return to_return
 
 
 def write_bids(
